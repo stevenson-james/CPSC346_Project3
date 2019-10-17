@@ -91,7 +91,12 @@ int setup(char inputBuffer[], char *args[],int *background)
 		}
 		else {
 			int num = atoi(&inputBuffer[1]);
-			if (num < 1 || num > (command_count % MAX_COMMANDS)) {
+			int max;
+			if (command_count > MAX_COMMANDS)
+				max = MAX_COMMANDS;
+			else
+				max = command_count;
+			if (num < 1 || num > max) {
 				printf("No such command in history\n");
 				return -1;
 			}
@@ -139,7 +144,6 @@ int setup(char inputBuffer[], char *args[],int *background)
 				*/  
 				
 				if (isNewString){
-					//DOUBLE CHECK
 					if (inputBuffer[i] == '&') {
 						*background = 1;
 						break;
@@ -201,17 +205,26 @@ int main(void)
 				max = MAX_COMMANDS;
 			for (int i = max; i > 0; i--)
 				printf("%d\t%s\n", i, display_history[i - 1]);
+			continue;
 		}
-		if (background)
-			printf("flag");
-		if (shouldrun) {
-			printf ("RUNNING\n");
-			/* creates a duplicate process! */
-			//here fill in your code
-			/* pid<0  error
-			*  pid == 0, it is the child process. use the system call execvp(args[0],args);
-			*  pid > 0, it is the parent. Here you need consider it is foreground or background
-			*/
+		if (shouldrun) {			
+			//creates a duplicate process!
+			child = fork();
+			//pid<0  error
+			if(child < 0){
+				printf("Error running command!!!\nExiting kernel\n");
+				return -1;
+			}
+			//pid == 0, it is the child process. use the system call execvp(args[0],args);
+			else if (child == 0){
+				execvp(args[0], args);
+			}
+			//pid > 0, it is the parent. Here you need consider it is foreground or background
+			else{
+				if(!background)
+					while (child != wait(NULL));	
+			}
+			
 		}
 	}
 	
