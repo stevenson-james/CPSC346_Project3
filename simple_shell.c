@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <string.h>
+#include <stdbool.h>
 
 
 #define MAX_LINE		80 /* 80 chars per line, per command, should be enough. */
@@ -25,13 +26,16 @@ int command_count = 0;
 
 void addtohistory(char inputBuffer[]) {
 
-	
+	int i = 0;
 	// update array"history": add the command to history, strcpy(str1,str2);
-	strcpy(history[command_count - 1], inputBuffer);
+	strcpy(history[(command_count - 1) % MAX_COMMANDS], inputBuffer);
 	
 	// update array"display_history": remove characters like '\n', '\0' in order to display nicely
- 
-
+	while (inputBuffer[i] != '\n' && inputBuffer[i] != '\0'){
+		display_history[(command_count - 1) % MAX_COMMANDS][i] = inputBuffer[i];
+		i++;
+	}
+	display_history[(command_count - 1) % MAX_COMMANDS][i] = '\0';
 	return;
 }
 
@@ -46,14 +50,18 @@ int setup(char inputBuffer[], char *args[],int *background)
 {
     int length,		/* # of characters in the command line */
 	i,				/* loop index for accessing inputBuffer array */
-	command_number;	/* index of requested command number */
+	command_number,	/* index of requested command number */
+	beg,			// index of beginning of a string
+	ct_arg = 0;	// arg to add string to
+
+	bool isNewString = true;
 
 	//define your local varialbes here;
 	
 	
     /* read what the user enters on the command line */
 	do {
-		printf("osh>");
+		printf("osh> ");
 		fflush(stdout);
 		length = read(STDIN_FILENO,inputBuffer,MAX_LINE); 
 	}
@@ -76,16 +84,16 @@ int setup(char inputBuffer[], char *args[],int *background)
 	if (inputBuffer[0] == '!') {
 		if (command_count == 0) {
 				printf("No commands in history\n");
-				return 1;
+				return -1;
 		}
-		if (inputBuffer[0] == '!') {
+		if (inputBuffer[1] == '!') {
 			strcpy(inputBuffer, history[(command_count - 1) % MAX_COMMANDS]);
 		}
 		else {
-			int num = stoi(inputBuffer[1])
+			int num = atoi(&inputBuffer[1]);
 			if (num < 1 || num > (command_count % MAX_COMMANDS)) {
 				printf("No such command in history\n");
-				return 1;
+				return -1;
 			}
 			strcpy(inputBuffer, history[num - 1]);
 		}
@@ -104,32 +112,50 @@ int setup(char inputBuffer[], char *args[],int *background)
         switch (inputBuffer[i]){
 			case ' ':
 			case '\t' : /* argument separators */
-				//fill in your code here, set up args				
-
+				//set up args
+				inputBuffer[i] = '\0';
+				if (!isNewString) {
+					args[ct_arg] = &inputBuffer[beg];
+					isNewString = true;
+					ct_arg++;	
+				}	
+				break;	
 				
 			case '\n':  /* should be the final char examined */
-				//fill in your code here, set up the last item args[x] ==NULL;
+				//fill in your code here, set up the last item args[x] = NULL;
 				/* no more arguments to this command */	
-
-				
-	    		default :             /* some other character */
-				 //fill in your code here, 
+				inputBuffer[i] = '\0';
+				if(!isNewString){
+					args[ct_arg] = &inputBuffer[beg];
+					ct_arg++;
+				}
+				break;	
+	    	default :  /* some other character */
+				//fill in your code here, 
 				/* args[i] is a pointer to a string, its value is the address of the first charater of that string
 				* You want to track the location of the beginning character of each string. 
-				* The location is the first character, which is not '\t', not '\t', and not '\n'
+				* The location is the first character, which is not '\t' and not '\n'
 				* You also need check "&". If '&' is detected, setup background flag.
 				*/  
+				
+				if (isNewString){
+					//DOUBLE CHECK
+					if (inputBuffer[i] == '&') {
+						*background = 1;
+						break;
+					}
+					beg = i;
+					isNewString = false;
 				}
-		} /* end of switch */
+		}
+		/* end of switch */
 	}    /* end of for */
-	
+	args[ct_arg] = NULL;
 	/**
 	 * Here you finish parsing the input. 
 	 * There is one more thing to assure. If we get '&', make sure you don't enter it in the args array
-	 */
+	*/
 	
-
-
 	return 1;
 	
 } /* end of setup routine */
@@ -138,7 +164,7 @@ int setup(char inputBuffer[], char *args[],int *background)
 int main(void)
 {
 	char inputBuffer[MAX_LINE]; 	/* buffer to hold the command entered */
-	int background;             	/* equals 1 if a command is followed by '&' */
+	int background = 0;             /* equals 1 if a command is followed by '&' */
 	char *args[MAX_LINE/2 + 1];	/* command line (of 80) has max of 40 arguments */
 	pid_t child;            		/* process id of the child process */
 	
@@ -158,6 +184,8 @@ int main(void)
 		* Call strncmp(str1,str1,count). The function call will return 0 if str1 == str2.
 		* "count" is the number of characters we use to compare.    
 		*/		
+		if (strncmp(inputBuffer, "exit", 4) == 0)
+			return 0;
 		
 		// fill in your code here Part II
 		/* if the user typed in "history", the shell program will display the history commands. 
@@ -165,21 +193,27 @@ int main(void)
 		* after you display all the array, this command is done. 
 		* Your program should go to read again, which means calling the "setup" function.  
 		*/
-		
-	
-
-				
+		else if (strncmp(inputBuffer, "history", 7) == 0){
+			int max;
+			if (command_count < MAX_COMMANDS)
+				max = command_count;
+			else
+				max = MAX_COMMANDS;
+			for (int i = max; i > 0; i--)
+				printf("%d\t%s\n", i, display_history[i - 1]);
+		}
+		if (background)
+			printf("flag");
 		if (shouldrun) {
+			printf ("RUNNING\n");
 			/* creates a duplicate process! */
 			//here fill in your code
 			/* pid<0  error
 			*  pid == 0, it is the child process. use the system call execvp(args[0],args);
 			*  pid > 0, it is the parent. Here you need consider it is foreground or background
 			*/
-							;
-			}
 		}
-    }
+	}
 	
 	return 0;
 }
