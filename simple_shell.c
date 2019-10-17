@@ -1,5 +1,8 @@
-/**
- *version control and author 
+/*
+	Author: Jams Stevenson
+	Project 3: Simple Shell
+	Filename: simple_shell.c
+	Section: 2
  */
 
 #include <stdio.h>
