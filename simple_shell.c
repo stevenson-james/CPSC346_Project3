@@ -21,6 +21,7 @@ char history[MAX_COMMANDS][MAX_LINE]; //the array used to store history commands
 char display_history [MAX_COMMANDS][MAX_LINE]; 
 /*the array used for "printf" to display history nicely. Remove special characters like "\n" or "\0"*/
 
+//counter for number of commands
 int command_count = 0;
 
 /**
@@ -56,8 +57,7 @@ int setup(char inputBuffer[], char *args[],int *background)
 	command_number,	/* index of requested command number */
 	beg,			// index of beginning of a string
 	ct_arg = 0;	// arg to add string to
-
-	bool isNewString = true;
+	bool isNewString = true; // boolean for whether a new argument is being read
 
 	//define your local varialbes here;
 	
@@ -82,8 +82,6 @@ int setup(char inputBuffer[], char *args[],int *background)
 	/**
 	 * Check if they are using history
 	 */
-	
-	// fill in your code here Part II, if the user input is to repeat some history command
 	if (inputBuffer[0] == '!') {
 		if (command_count == 0) {
 				printf("No commands in history\n");
@@ -113,7 +111,6 @@ int setup(char inputBuffer[], char *args[],int *background)
 	addtohistory(inputBuffer); 
 	
 	//Parse the contents of inputBuffer
-	
     for (i=0;i<length;i++) { 
 		/* examine every character in the inputBuffer */
 		
@@ -129,8 +126,7 @@ int setup(char inputBuffer[], char *args[],int *background)
 				}	
 				break;	
 				
-			case '\n':  /* should be the final char examined */
-				//fill in your code here, set up the last item args[x] = NULL;
+			case '\n':  /* should be the final char examined *
 				/* no more arguments to this command */	
 				inputBuffer[i] = '\0';
 				if(!isNewString){
@@ -139,7 +135,6 @@ int setup(char inputBuffer[], char *args[],int *background)
 				}
 				break;	
 	    	default :  /* some other character */
-				//fill in your code here, 
 				/* args[i] is a pointer to a string, its value is the address of the first charater of that string
 				* You want to track the location of the beginning character of each string. 
 				* The location is the first character, which is not '\t' and not '\n'
@@ -186,7 +181,6 @@ int main(void)
 		
 		shouldrun = setup(inputBuffer,args,&background);       /* get next command */
 		
-		// fill in your code here Part I
 		/* if the user typed in "exit", the shell program will return (or terminate). 
 		* Call strncmp(str1,str1,count). The function call will return 0 if str1 == str2.
 		* "count" is the number of characters we use to compare.    
@@ -194,7 +188,6 @@ int main(void)
 		if (strncmp(inputBuffer, "exit", 4) == 0)
 			return 0;
 		
-		// fill in your code here Part II
 		/* if the user typed in "history", the shell program will display the history commands. 
 		* you will use "printf" to print the display_history
 		* after you display all the array, this command is done. 
